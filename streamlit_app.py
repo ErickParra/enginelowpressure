@@ -22,7 +22,7 @@ conn_str = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={
  
 # Ejecución de la consulta SQL
 query = """
-SELECT TOP 1000 
+SELECT TOP 100000 
        [EquipmentName]
       ,[ReadTime]
       ,[EquipmentModel]
