@@ -1,76 +1,3 @@
-import streamlit as st
-import pandas as pd
-import matplotlib.pyplot as plt
-import pyodbc
-import numpy as np
-from sklearn.preprocessing import PolynomialFeatures
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import r2_score
-
-# Acceder a los secrets almacenados en Streamlit Cloud
-server = st.secrets["server"]
-database = st.secrets["database"]
-username = st.secrets["username"]
-password = st.secrets["password"]
-
-@st.cache
-def load_data(query, conn_str):
-    conn = pyodbc.connect(conn_str)
-    data = pd.read_sql(query, conn)
-    conn.close()
-    return data
-
-# Configuración de la conexión a la base de datos
-conn_str = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};UID={username};PWD={password}'
-
-# Ejecución de la consulta SQL
-query = """
-SELECT
-       [EquipmentName]
-      ,[ReadTime]
-      ,[EquipmentModel]
-      ,[ParameterName]
-      ,[ParameterFloatValue]
-  FROM [OemDataProvider].[OemParameterExternalView]
-  WHERE ([EquipmentModel] = '797F')
-              AND ParameterFloatValue IS NOT NULL
-        AND ReadTime > (DATEADD (hour, -36, GETDATE()))
-        AND (ParameterName =  'Engine Oil Pressure (Absolute)' OR
-            ParameterName =  'Engine Oil Pressure' OR
-            ParameterName =  'Engine Oil Pressure Front' OR
-            ParameterName =  'Engine Oil Pressure Rear' OR
-            ParameterName =  'Engine Speed' OR
-            ParameterName =  'Engine Oil Pressure (High Resolution/Extended Range)')
-"""
-
-# Ejecutar la consulta y obtener los datos
-with st.spinner('Ejecutando consulta...'):
-    data = load_data(query, conn_str)
-st.success('Consulta completada!')
-
-# Verificar si los datos se han obtenido correctamente
-st.write("### Datos obtenidos de la base de datos")
-st.dataframe(data)
-
-# Filtrar los datos para 797F y Engine Oil Pressure
-data_797F = data.loc[(data['EquipmentModel'] == '797F') & (data['ParameterName'] == 'Engine Oil Pressure')]
-
-# Graficar datos
-st.write("### Gráfico de Engine Oil Pressure para el modelo 797F")
-fig, ax = plt.subplots(figsize=(16, 8))
-
-if not data_797F.empty:
-    data_797F = data_797F[(data_797F['ParameterFloatValue'] >= 150) & (data_797F['ParameterFloatValue'] <= 1000)]
-    group_797F = data_797F.groupby('EquipmentName')
-
-    for name, group in group_797F:
-        group.plot(x='ReadTime', y='ParameterFloatValue', label=name, ax=ax, linewidth=0.5)
-else:
-    st.write("No hay datos disponibles para el modelo 797F y Engine Oil Pressure en el rango especificado.")
-
-plt.legend()
-st.pyplot(fig)
-
 # Graficar relación entre Engine Speed y Engine Oil Pressure
 st.write("### Relación entre Engine Speed y Engine Oil Pressure")
 PRESSURE_LVL3_PSI = [0, 100, 120, 225, 240, 255, 270, 285, 300, 309, 319, 329, 337.5, 346, 356, 366, 376]
@@ -90,14 +17,16 @@ fig, ax = plt.subplots(figsize=(16, 8))
 if not merged_data.empty:
     for name, group in merged_data.groupby('EquipmentName'):
         ax.scatter(group['ParameterFloatValue_x'], group['ParameterFloatValue_y'], label=name, alpha=0.5, s=0.75)
-        ax.plot(X_pressure3, PRESSURE_LVL3_PSI, '--', color='orange', linewidth=0.5)
-        ax.plot(X_pressure1, PRESSURE_LVL1_PSI, '--', color='gray', linewidth=0.5)
+        ax.plot(X_pressure3, PRESSURE_LVL3_PSI, '--', color='orange', linewidth=0.5, label='Pressure Level 3')
+        ax.plot(X_pressure1, PRESSURE_LVL1_PSI, '--', color='gray', linewidth=0.5, label='Pressure Level 1')
 else:
     st.write("No hay datos disponibles para la relación entre Engine Speed y Engine Oil Pressure en el rango especificado.")
 
 ax.set_xlabel('Engine Speed')
 ax.set_ylabel('Engine Oil Pressure')
-ax.legend()
+legend = ax.legend(fontsize=5)  # Cambiar tamaño de fuente de las leyendas
+for text in legend.get_texts():
+    text.set_fontsize(5)  # Asegurarse de que todas las leyendas tengan tamaño de fuente 5
 st.pyplot(fig)
 
 # Modelos de regresión y ajuste de curvas
@@ -143,15 +72,17 @@ if not merged_data.empty:
             ax.plot(X_grid, lin_reg.predict(poly_reg.transform(X_grid)), color='blue')
             ax.set_ylim(0, 750)
 
-            ax.plot(X_pressure3, PRESSURE_LVL3_PSI, '--', color='orange', linewidth=0.5, label='Pressure Level 3', markersize=2) 
-            ax.plot(X_pressure1, PRESSURE_LVL1_PSI, '--', color='gray', linewidth=0.5,   label='Pressure Level 1', markersize=2) 
+            ax.plot(X_pressure3, PRESSURE_LVL3_PSI, '--', color='orange', linewidth=0.5, label='Pressure Level 3') 
+            ax.plot(X_pressure1, PRESSURE_LVL1_PSI, '--', color='gray', linewidth=0.5, label='Pressure Level 1') 
 
             ax.set_title(f"{name} (R2={r2:.2f})")
             ax.set_xlabel('Engine Speed')
             ax.set_ylabel('Engine Oil Pressure')
             ax.text(0.05, 0.05, formula, transform=ax.transAxes, fontsize=5,
                     verticalalignment='bottom', bbox=dict(facecolor='white', alpha=0.8))
-            ax.legend()
+            legend = ax.legend(fontsize=5)  # Cambiar tamaño de fuente de las leyendas
+            for text in legend.get_texts():
+                text.set_fontsize(5)  # Asegurarse de que todas las leyendas tengan tamaño de fuente 5
         else:
             ax.set_title(f"{name} - Modelo no disponible")
             ax.set_xlabel('Engine Speed')
