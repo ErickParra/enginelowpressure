@@ -143,8 +143,8 @@ if not merged_data.empty:
             ax.plot(X_grid, lin_reg.predict(poly_reg.transform(X_grid)), color='blue')
             ax.set_ylim(0, 750)
 
-            ax.plot(X_pressure3, PRESSURE_LVL3_PSI, '--', color='orange', linewidth=0.5,fontsize=5, label='Pressure Level 3') 
-            ax.plot(X_pressure1, PRESSURE_LVL1_PSI, '--', color='gray', linewidth=0.5, fontsize=5, label='Pressure Level 1') 
+            ax.plot(X_pressure3, PRESSURE_LVL3_PSI, '--', color='orange', linewidth=0.5, label='Pressure Level 3') 
+            ax.plot(X_pressure1, PRESSURE_LVL1_PSI, '--', color='gray', linewidth=0.5,   label='Pressure Level 1') 
 
             ax.set_title(f"{name} (R2={r2:.2f})")
             ax.set_xlabel('Engine Speed')
