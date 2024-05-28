@@ -22,14 +22,14 @@ conn_str = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={
  
 # Ejecución de la consulta SQL
 query = """
-SELECT TOP 100000 
+SELECT
        [EquipmentName]
       ,[ReadTime]
       ,[EquipmentModel]
       ,[ParameterName]
       ,[ParameterFloatValue]
   FROM [OemDataProvider].[OemParameterExternalView]
-  WHERE ([EquipmentModel] = '797F' OR [EquipmentModel] = '797B')
+  WHERE ([EquipmentModel] = '797F')
               AND ParameterFloatValue IS NOT NULL 
         AND ReadTime > (DATEADD (hour, -36, GETDATE())) 
         AND (ParameterName =  'Engine Oil Pressure (Absolute)' OR 
