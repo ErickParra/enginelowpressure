@@ -13,7 +13,7 @@ conn = pyodbc.connect(f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server}
  
 # Ejecución de la consulta SQL
 query = """
-SELECT 
+SELECT TOP 1000
        [EquipmentName]
       ,[ReadTime]
       ,[EquipmentModel]
