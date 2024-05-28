@@ -3,9 +3,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import pyodbc
 import numpy as np
-from sklearn.preprocessing import PolynomialFeatures
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import r2_score
  
 # Acceder a los secrets almacenados en Streamlit Cloud
 server = st.secrets["server"]
@@ -25,15 +22,15 @@ conn_str = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={
  
 # Ejecución de la consulta SQL
 query = """
-SELECT TOP 1000 
+SELECT
        [EquipmentName]
       ,[ReadTime]
       ,[EquipmentModel]
       ,[ParameterName]
       ,[ParameterFloatValue]
   FROM [OemDataProvider].[OemParameterExternalView]
-  WHERE ([EquipmentModel] = '797F')  
-        AND ParameterFloatValue IS NOT NULL 
+  WHERE ([EquipmentModel] = '797F')
+              AND ParameterFloatValue IS NOT NULL 
         AND ReadTime > (DATEADD (hour, -36, GETDATE())) 
         AND (ParameterName =  'Engine Oil Pressure (Absolute)' OR 
             ParameterName =  'Engine Oil Pressure' OR 
@@ -99,25 +96,29 @@ ax.set_xlabel('Engine Speed')
 ax.set_ylabel('Engine Oil Pressure')
 ax.legend()
 st.pyplot(fig)
+
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import LinearRegression
  
-# Modelos de regresión y ajuste de curvas
-st.write("### Modelos de regresión y ajuste de curvas")
- 
-# Inicializar models
+grouped_data = merged_data.groupby('EquipmentName')
 models = {}
  
+for name, group in grouped_data:
+    X = group['ParameterFloatValue_x'].values.reshape(-1, 1)
+    y = group['ParameterFloatValue_y'].values
+   
+    poly_reg = PolynomialFeatures(degree=4)
+    X_poly = poly_reg.fit_transform(X)
+   
+    lin_reg = LinearRegression()
+    lin_reg.fit(X_poly, y)
+   
+    models[name] = (lin_reg, poly_reg)
+
+# Modelos de regresión y ajuste de curvas
+st.write("### Modelos de regresión y ajuste de curvas")
 if not merged_data.empty:
     grouped_data = merged_data.groupby('EquipmentName')
- 
-    # Crear modelos de regresión para cada grupo
-    for name, group in grouped_data:
-        X = group['ParameterFloatValue_x'].values.reshape(-1, 1)
-        y = group['ParameterFloatValue_y'].values
-        poly_reg = PolynomialFeatures(degree=4)
-        X_poly = poly_reg.fit_transform(X)
-        lin_reg = LinearRegression()
-        lin_reg.fit(X_poly, y)
-        models[name] = (lin_reg, poly_reg)
  
     nrows = int(np.ceil(np.sqrt(len(grouped_data))))
     ncols = int(np.ceil(len(grouped_data) / nrows))
@@ -128,34 +129,29 @@ if not merged_data.empty:
         X = group['ParameterFloatValue_x'].values.reshape(-1, 1)
         y = group['ParameterFloatValue_y'].values
  
-        if name in models:
-            lin_reg, poly_reg = models[name]
+        lin_reg, poly_reg = models[name]
  
-            X_grid = np.arange(X.min(), X.max(), 0.1).reshape(-1, 1)
-            y_pred = lin_reg.predict(poly_reg.transform(X))
-            r2 = r2_score(y, y_pred)
+        X_grid = np.arange(X.min(), X.max(), 0.1).reshape(-1, 1)
+        y_pred = lin_reg.predict(poly_reg.transform(X))
+        r2 = r2_score(y, y_pred)
  
-            formula = f"y = {lin_reg.intercept_:.2f}"
-            for i, coef in enumerate(lin_reg.coef_[1:], start=1):
-                formula += f" + {coef:.2f}x^{i}"
+        formula = f"y = {lin_reg.intercept_:.2f}"
+        for i, coef in enumerate(lin_reg.coef_[1:], start=1):
+            formula += f" + {coef:.2f}x^{i}"
  
-            ax.scatter(X, y, color='red', alpha=0.5, s=1)
-            ax.plot(X_grid, lin_reg.predict(poly_reg.transform(X_grid)), color='blue')
-            ax.set_ylim(0, 750)
+        ax.scatter(X, y, color='red', alpha=0.5, s=1)
+        ax.plot(X_grid, lin_reg.predict(poly_reg.transform(X_grid)), color='blue')
+        ax.set_ylim(0, 750)
  
-            ax.plot(X_pressure3, PRESSURE_LVL3_PSI, '--', color='orange', linewidth=0.5, label='Pressure Level 3') 
-            ax.plot(X_pressure1, PRESSURE_LVL1_PSI, '--', color='gray', linewidth=0.5, label='Pressure Level 1')
+        ax.plot(X_pressure3, PRESSURE_LVL3_PSI, '--', color='orange', linewidth=0.5, label='Pressure Level 3') 
+        ax.plot(X_pressure1, PRESSURE_LVL1_PSI, '--', color='gray', linewidth=0.5, label='Pressure Level 1')
  
-            ax.set_title(f"{name} (R2={r2:.2f})")
-            ax.set_xlabel('Engine Speed')
-            ax.set_ylabel('Engine Oil Pressure')
-            ax.text(0.05, 0.05, formula, transform=ax.transAxes, fontsize=5,
-                    verticalalignment='bottom', bbox=dict(facecolor='white', alpha=0.8))
-            ax.legend()
-        else:
-            ax.set_title(f"{name} - Modelo no disponible")
-            ax.set_xlabel('Engine Speed')
-            ax.set_ylabel('Engine Oil Pressure')
+        ax.set_title(f"{name} (R2={r2:.2f})")
+        ax.set_xlabel('Engine Speed')
+        ax.set_ylabel('Engine Oil Pressure')
+        ax.text(0.05, 0.05, formula, transform=ax.transAxes, fontsize=5,
+                verticalalignment='bottom', bbox=dict(facecolor='white', alpha=0.8))
+        ax.legend()
  
     plt.tight_layout()
     st.pyplot(fig)
