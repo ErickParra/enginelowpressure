@@ -115,8 +115,6 @@ for name, group in grouped_data:
    
     models[name] = (lin_reg, poly_reg)
 
-
-
 # Modelos de regresión y ajuste de curvas
 st.write("### Modelos de regresión y ajuste de curvas")
 if not merged_data.empty:
