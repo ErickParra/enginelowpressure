@@ -5,10 +5,10 @@ import pyodbc
 import numpy as np
  
 # Configuración de la conexión a la base de datos
-server = 'CENmc32ds.database.windows.net'
-database = 'CENmc32db'
-username = 'readonlyuser'
-password = 'U5Awa56VBdBYNVF2YaYy98wJ'
+server = st.secrets["server"]
+database = st.secrets["database"]
+username = st.secrets["username"]
+password = st.secrets["password"]
 conn = pyodbc.connect(f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};UID={username};PWD={password}')
  
 # Ejecución de la consulta SQL
