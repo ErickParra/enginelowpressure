@@ -96,7 +96,27 @@ ax.set_xlabel('Engine Speed')
 ax.set_ylabel('Engine Oil Pressure')
 ax.legend()
 st.pyplot(fig)
+
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import LinearRegression
  
+grouped_data = merged_data.groupby('EquipmentName')
+models = {}
+ 
+for name, group in grouped_data:
+    X = group['ParameterFloatValue_x'].values.reshape(-1, 1)
+    y = group['ParameterFloatValue_y'].values
+   
+    poly_reg = PolynomialFeatures(degree=4)
+    X_poly = poly_reg.fit_transform(X)
+   
+    lin_reg = LinearRegression()
+    lin_reg.fit(X_poly, y)
+   
+    models[name] = (lin_reg, poly_reg)
+
+
+
 # Modelos de regresión y ajuste de curvas
 st.write("### Modelos de regresión y ajuste de curvas")
 if not merged_data.empty:
