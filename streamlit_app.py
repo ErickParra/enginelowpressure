@@ -32,7 +32,7 @@ SELECT TOP 1000
       ,[ParameterName]
       ,[ParameterFloatValue]
   FROM [OemDataProvider].[OemParameterExternalView]
-  WHERE ([EquipmentModel] = '797F' OR [EquipmentModel] = '797B' OR [EquipmentModel] = '793C' OR [EquipmentModel] = '793F' OR [EquipmentModel] = '930E')  
+  WHERE ([EquipmentModel] = '797F')  
         AND ParameterFloatValue IS NOT NULL 
         AND ReadTime > (DATEADD (hour, -36, GETDATE())) 
         AND (ParameterName =  'Engine Oil Pressure (Absolute)' OR 
