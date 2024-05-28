@@ -49,14 +49,14 @@ with st.spinner('Ejecutando consulta...'):
 st.success('Consulta completada!')
 
 # Verificar si los datos se han obtenido correctamente
-st.write("### Datos obtenidos de la base de datos")
+st.write("### Datos obtenidos desde Minecare 3")
 st.dataframe(data)
 
 # Filtrar los datos para 797F y Engine Oil Pressure
 data_797F = data.loc[(data['EquipmentModel'] == '797F') & (data['ParameterName'] == 'Engine Oil Pressure')]
 
 # Graficar datos
-st.write("### Gráfico de Engine Oil Pressure para el modelo 797F")
+st.write("### Gráfico de Engine Oil Pressure 797F")
 fig, ax = plt.subplots(figsize=(16, 8))
 
 if not data_797F.empty:
@@ -72,7 +72,7 @@ plt.legend()
 st.pyplot(fig)
 
 # Graficar relación entre Engine Speed y Engine Oil Pressure
-st.write("### Relación entre Engine Speed y Engine Oil Pressure")
+st.write("### Relación entre Engine Speed (RPM) y Engine Oil Pressure (PSI)")
 PRESSURE_LVL3_PSI = [0, 100, 120, 225, 240, 255, 270, 285, 300, 309, 319, 329, 337.5, 346, 356, 366, 376]
 PRESSURE_LVL1_PSI = [100, 125, 155, 250, 270, 290, 310, 330, 350, 356, 361, 369, 375, 381, 387, 395, 400]
 RPM = [560, 580, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000]
@@ -101,7 +101,7 @@ ax.legend()
 st.pyplot(fig)
 
 # Modelos de regresión y ajuste de curvas
-st.write("### Modelos de regresión y ajuste de curvas")
+st.write("### Presión vs RPM ajuste de curva y limites L1/L3")
 
 grouped_data = merged_data.groupby('EquipmentName')
 models = {}
