@@ -205,7 +205,7 @@ st.dataframe(results_df)
 
 
 # Filtrar datos solo donde Engine Speed es mayor a 750 RPM
-filtered_data = merged_data[merged_data['ParameterFloatValue_x'] >= 750]
+filtered_data = merged_data[merged_data['ParameterFloatValue_x'] >= 800]
 
 # Calcular métricas y residuos
 results = []
@@ -244,7 +244,7 @@ for name, group in filtered_data.groupby('EquipmentName'):
 residuals_df = pd.DataFrame(residuals)
 
 # Graficar residuos por EquipmentName
-st.write("### Gráfico de Residuos por EquipmentName")
+st.write("### Gráfico de Residuos por CAEX >800 RPM")
 
 if not residuals_df.empty:
     nrows = int(np.ceil(np.sqrt(len(residuals_df['EquipmentName'].unique()))))
