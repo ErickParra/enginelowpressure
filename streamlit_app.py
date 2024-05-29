@@ -198,3 +198,64 @@ results_df = results_df.sort_values(by="RMSE", ascending=False)
 # Mostrar la tabla de resultados
 st.write("### Ranking métricas de Camiones")
 st.dataframe(results_df)
+
+
+
+# Calcular métricas y residuos
+results = []
+residuals = []
+
+for name, group in grouped_data:
+    X = group['ParameterFloatValue_x'].values.reshape(-1, 1)
+    y = group['ParameterFloatValue_y'].values
+    
+    if name in models:
+        lin_reg, poly_reg = models[name]
+        y_pred = lin_reg.predict(poly_reg.transform(X))
+        
+        r2 = r2_score(y, y_pred)
+        rmse = np.sqrt(mean_squared_error(y, y_pred))
+        mae = mean_absolute_error(y, y_pred)
+        
+        results.append({
+            "EquipmentName": name,
+            "R2": r2,
+            "RMSE": rmse,
+            "MAE": mae
+        })
+        
+        # Calcular residuos
+        res = y - y_pred
+        residuals.extend([{
+            "EquipmentName": name,
+            "ReadTime": rt,
+            "Residual": r,
+            "Real": real,
+            "Predicted": pred
+        } for rt, real, pred, r in zip(group['ReadTime'], y, y_pred, res)])
+
+# Convertir los residuos en un DataFrame
+residuals_df = pd.DataFrame(residuals)
+
+# Graficar residuos por EquipmentName
+st.write("### Gráfico de Residuos por EquipmentName")
+
+if not residuals_df.empty:
+    nrows = int(np.ceil(np.sqrt(len(residuals_df['EquipmentName'].unique()))))
+    ncols = int(np.ceil(len(residuals_df['EquipmentName'].unique()) / nrows))
+
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(16, 8))
+
+    for (name, group), ax in zip(residuals_df.groupby('EquipmentName'), axes.flat):
+        ax.scatter(group['ReadTime'], group['Residual'], color='red', alpha=0.5, s=10, label='Residual')
+        ax.scatter(group['ReadTime'], group['Real'], color='blue', alpha=0.5, s=10, label='Real')
+        ax.scatter(group['ReadTime'], group['Predicted'], color='green', alpha=0.5, s=10, label='Predicted')
+        ax.set_title(f"{name}")
+        ax.set_xlabel('ReadTime')
+        ax.set_ylabel('Values')
+        ax.legend()
+
+    plt.tight_layout()
+    st.pyplot(fig)
+else:
+    st.write("No hay datos de residuos disponibles.")
