@@ -34,7 +34,7 @@ SELECT
   FROM [OemDataProvider].[OemParameterExternalView]
   WHERE ([EquipmentModel] = '797F')
               AND ParameterFloatValue IS NOT NULL
-        AND ReadTime > (DATEADD (hour, -36, GETDATE()))
+        AND ReadTime > (DATEADD (hour, -120, GETDATE()))
         AND (ParameterName =  'Engine Oil Pressure (Absolute)' OR
             ParameterName =  'Engine Oil Pressure' OR
             ParameterName =  'Engine Oil Pressure Front' OR
@@ -107,8 +107,6 @@ st.write("### Presión vs RPM ajuste de curva y limites L1/L3")
 
 grouped_data = merged_data.groupby('EquipmentName')
 models = {}
-results = []
-residuals = []
 
 for name, group in grouped_data:
     X = group['ParameterFloatValue_x'].values.reshape(-1, 1)
@@ -120,45 +118,83 @@ for name, group in grouped_data:
     lin_reg = LinearRegression()
     lin_reg.fit(X_poly, y)
     
-    y_pred = lin_reg.predict(poly_reg.transform(X))
-    r2 = r2_score(y, y_pred)
-    rmse = np.sqrt(mean_squared_error(y, y_pred))
-    mae = mean_absolute_error(y, y_pred)
-    
     models[name] = (lin_reg, poly_reg)
-    results.append({
-        "EquipmentName": name,
-        "R2": r2,
-        "RMSE": rmse,
-        "MAE": mae
-    })
-    # Calcular residuos
-    res = y - y_pred
-    residuals.extend([{
-        "EquipmentName": name,
-        "ReadTime": rt,
-        "Residual": r
-    } for rt, r in zip(group['ReadTime'], res)])
 
-# Convertir los residuos en un DataFrame
-residuals_df = pd.DataFrame(residuals)
-
-# Graficar residuos por EquipmentName
-st.write("### Gráfico de Residuos por EquipmentName")
-
-if not residuals_df.empty:
-    nrows = int(np.ceil(np.sqrt(len(residuals_df['EquipmentName'].unique()))))
-    ncols = int(np.ceil(len(residuals_df['EquipmentName'].unique()) / nrows))
+if not merged_data.empty:
+    nrows = int(np.ceil(np.sqrt(len(grouped_data))))
+    ncols = int(np.ceil(len(grouped_data) / nrows))
 
     fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(16, 8))
 
-    for (name, group), ax in zip(residuals_df.groupby('EquipmentName'), axes.flat):
-        ax.scatter(group['ReadTime'], group['Residual'], alpha=0.5, s=10)
-        ax.set_title(f"{name}")
-        ax.set_xlabel('ReadTime')
-        ax.set_ylabel('Residual')
+    for (name, group), ax in zip(grouped_data, axes.flat):
+        X = group['ParameterFloatValue_x'].values.reshape(-1, 1)
+        y = group['ParameterFloatValue_y'].values
+
+        if name in models:
+            lin_reg, poly_reg = models[name]
+
+            X_grid = np.arange(X.min(), X.max(), 0.1).reshape(-1, 1)
+            y_pred = lin_reg.predict(poly_reg.transform(X))
+            r2 = r2_score(y, y_pred)
+
+            formula = f"y = {lin_reg.intercept_:.2f}"
+            for i, coef in enumerate(lin_reg.coef_[1:], start=1):
+                formula += f" + {coef:.2f}x^{i}"
+
+            ax.scatter(X, y, color='red', alpha=0.5, s=1)
+            ax.plot(X_grid, lin_reg.predict(poly_reg.transform(X_grid)), color='blue')
+            ax.set_ylim(0, 750)
+
+            ax.plot(X_pressure3, PRESSURE_LVL3_PSI, '--', color='orange', linewidth=0.5, label='Pressure Level 3', markersize=2) 
+            ax.plot(X_pressure1, PRESSURE_LVL1_PSI, '--', color='gray', linewidth=0.5,   label='Pressure Level 1', markersize=2) 
+
+            ax.set_title(f"{name} (R2={r2:.2f})")
+            ax.set_xlabel('Engine Speed')
+            ax.set_ylabel('Engine Oil Pressure')
+            ax.text(0.05, 0.05, formula, transform=ax.transAxes, fontsize=5,
+                    verticalalignment='bottom', bbox=dict(facecolor='white', alpha=0.8))
+            ax.legend(fontsize=2)
+        else:
+            ax.set_title(f"{name} - Modelo no disponible")
+            ax.set_xlabel('Engine Speed')
+            ax.set_ylabel('Engine Oil Pressure')
 
     plt.tight_layout()
     st.pyplot(fig)
 else:
-    st.write("No hay datos de residuos disponibles.")
+    st.write("No hay datos disponibles para los modelos de regresión y ajuste de curvas.")
+
+
+
+# Añadir las métricas calculadas al final
+
+results = []
+
+for name, group in grouped_data:
+    X = group['ParameterFloatValue_x'].values.reshape(-1, 1)
+    y = group['ParameterFloatValue_y'].values
+    
+    if name in models:
+        lin_reg, poly_reg = models[name]
+        y_pred = lin_reg.predict(poly_reg.transform(X))
+        
+        r2 = r2_score(y, y_pred)
+        rmse = np.sqrt(mean_squared_error(y, y_pred))
+        mae = mean_absolute_error(y, y_pred)
+        
+        results.append({
+            "EquipmentName": name,
+            "R2": r2,
+            "RMSE": rmse,
+            "MAE": mae
+        })
+
+# Convertir los resultados en un DataFrame
+results_df = pd.DataFrame(results)
+
+# Ordenar por RMSE de mayor a menor
+results_df = results_df.sort_values(by="RMSE", ascending=False)
+
+# Mostrar la tabla de resultados
+st.write("### Ranking métricas de Camiones")
+st.dataframe(results_df)
