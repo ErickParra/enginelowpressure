@@ -163,3 +163,36 @@ if not merged_data.empty:
     st.pyplot(fig)
 else:
     st.write("No hay datos disponibles para los modelos de regresión y ajuste de curvas.")
+
+# Añadir las métricas calculadas al final
+
+results = []
+
+for name, group in grouped_data:
+    X = group['ParameterFloatValue_x'].values.reshape(-1, 1)
+    y = group['ParameterFloatValue_y'].values
+    
+    if name in models:
+        lin_reg, poly_reg = models[name]
+        y_pred = lin_reg.predict(poly_reg.transform(X))
+        
+        r2 = r2_score(y, y_pred)
+        rmse = np.sqrt(mean_squared_error(y, y_pred))
+        mae = mean_absolute_error(y, y_pred)
+        
+        results.append({
+            "EquipmentName": name,
+            "R2": r2,
+            "RMSE": rmse,
+            "MAE": mae
+        })
+
+# Convertir los resultados en un DataFrame
+results_df = pd.DataFrame(results)
+
+# Ordenar por RMSE de mayor a menor
+results_df = results_df.sort_values(by="RMSE", ascending=False)
+
+# Mostrar la tabla de resultados
+st.write("### Resultados de Métricas por EquipmentName")
+st.dataframe(results_df)
