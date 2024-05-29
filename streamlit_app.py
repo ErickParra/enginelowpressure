@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import pyodbc
+import mdates
 import numpy as np
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression
@@ -250,10 +251,13 @@ if not residuals_df.empty:
         ax.scatter(group['ReadTime'], group['Residual'], color='red', alpha=0.5, s=10, label='Residual')
         ax.scatter(group['ReadTime'], group['Real'], color='blue', alpha=0.5, s=10, label='Real')
         ax.scatter(group['ReadTime'], group['Predicted'], color='green', alpha=0.5, s=10, label='Predicted')
-        ax.set_title(f"{name}")
-        ax.set_xlabel('ReadTime')
-        ax.set_ylabel('Values')
-        ax.legend()
+        ax.set_title(f"{name}", fontsize=8)
+        ax.set_xlabel('ReadTime', fontsize=8)
+        ax.set_ylabel('Values', fontsize=8)
+        ax.legend(fontsize=6)
+        ax.tick_params(axis='x', labelsize=6)
+        ax.tick_params(axis='y', labelsize=6)
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
 
     plt.tight_layout()
     st.pyplot(fig)
