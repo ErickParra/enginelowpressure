@@ -202,11 +202,16 @@ st.dataframe(results_df)
 
 
 
+
+
+# Filtrar datos solo donde Engine Speed es mayor a 750 RPM
+filtered_data = merged_data[merged_data['ParameterFloatValue_x'] >= 750]
+
 # Calcular métricas y residuos
 results = []
 residuals = []
 
-for name, group in grouped_data:
+for name, group in filtered_data.groupby('EquipmentName'):
     X = group['ParameterFloatValue_x'].values.reshape(-1, 1)
     y = group['ParameterFloatValue_y'].values
     
@@ -254,9 +259,9 @@ if not residuals_df.empty:
         ax.set_title(f"{name}", fontsize=8)
         ax.set_xlabel('ReadTime', fontsize=8)
         ax.set_ylabel('Values', fontsize=8)
-        ax.legend(fontsize=5)
-        ax.tick_params(axis='x', labelsize=3)
-        ax.tick_params(axis='y', labelsize=3)
+        ax.legend(fontsize=6)
+        ax.tick_params(axis='x', labelsize=6)
+        ax.tick_params(axis='y', labelsize=6)
         ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
 
     plt.tight_layout()
