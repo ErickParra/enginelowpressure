@@ -194,5 +194,5 @@ results_df = pd.DataFrame(results)
 results_df = results_df.sort_values(by="RMSE", ascending=False)
 
 # Mostrar la tabla de resultados
-st.write("### Resultados de Métricas por EquipmentName")
+st.write("### Ranking métricas de Camiones")
 st.dataframe(results_df)
