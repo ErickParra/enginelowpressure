@@ -259,7 +259,7 @@ if not residuals_df.empty:
         ax.set_title(f"{name}", fontsize=8)
         ax.set_xlabel('ReadTime', fontsize=8)
         ax.set_ylabel('Values', fontsize=8)
-        ax.legend(fontsize=6)
+        ax.legend(fontsize=5)
         ax.tick_params(axis='x', labelsize=6)
         ax.tick_params(axis='y', labelsize=6)
         ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
