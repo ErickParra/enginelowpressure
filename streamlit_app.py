@@ -5,7 +5,7 @@ import pyodbc
 import numpy as np
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression
-from sklearn.metrics import r2_score
+from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 
 # Acceder a los secrets almacenados en Streamlit Cloud
 server = st.secrets["server"]
