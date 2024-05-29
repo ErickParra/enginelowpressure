@@ -48,6 +48,8 @@ with st.spinner('Ejecutando consulta...'):
     data = load_data(query, conn_str)
 st.success('Consulta completada!')
 
+data = data.sort_values(by='ReadTime', ascending=False)
+
 # Verificar si los datos se han obtenido correctamente
 st.write("### Datos obtenidos desde Minecare 3")
 st.dataframe(data)
