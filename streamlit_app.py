@@ -164,6 +164,8 @@ if not merged_data.empty:
 else:
     st.write("No hay datos disponibles para los modelos de regresión y ajuste de curvas.")
 
+
+
 # Añadir las métricas calculadas al final
 
 results = []
@@ -196,3 +198,64 @@ results_df = results_df.sort_values(by="RMSE", ascending=False)
 # Mostrar la tabla de resultados
 st.write("### Ranking métricas de Camiones")
 st.dataframe(results_df)
+
+
+
+
+# Calcular métricas y residuos
+results = []
+residuals = []
+
+for name, group in grouped_data:
+    X = group['ParameterFloatValue_x'].values.reshape(-1, 1)
+    y = group['ParameterFloatValue_y'].values
+    
+    if name in models:
+        lin_reg, poly_reg = models[name]
+        y_pred = lin_reg.predict(poly_reg.transform(X))
+        
+        r2 = r2_score(y, y_pred)
+        rmse = np.sqrt(mean_squared_error(y, y_pred))
+        mae = mean_absolute_error(y, y_pred)
+        
+        results.append({
+            "EquipmentName": name,
+            "R2": r2,
+            "RMSE": rmse,
+            "MAE": mae
+        })
+        
+        # Calcular residuos
+        res = y - y_pred
+        residuals.extend([{
+            "EquipmentName": name,
+            "ReadTime": rt,
+            "Residual": r
+        } for rt, r in zip(group['ReadTime'], res)])
+
+# Convertir los resultados en un DataFrame
+results_df = pd.DataFrame(results)
+residuals_df = pd.DataFrame(residuals)
+
+# Ordenar por RMSE de mayor a menor
+results_df = results_df.sort_values(by="RMSE", ascending=False)
+
+# Mostrar la tabla de resultados
+st.write("### Resultados de Métricas por EquipmentName")
+st.dataframe(results_df)
+
+# Mostrar los residuos
+st.write("### Residuos por EquipmentName")
+st.dataframe(residuals_df)
+
+# Graficar residuos
+st.write("### Gráfico de Residuos por EquipmentName")
+fig, ax = plt.subplots(figsize=(16, 8))
+
+for name, group in residuals_df.groupby('EquipmentName'):
+    ax.scatter(group['ReadTime'], group['Residual'], label=name, alpha=0.5, s=10)
+
+ax.set_xlabel('ReadTime')
+ax.set_ylabel('Residual')
+ax.legend(fontsize=5)
+st.pyplot(fig)
