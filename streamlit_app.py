@@ -34,7 +34,7 @@ SELECT
   FROM [OemDataProvider].[OemParameterExternalView]
   WHERE ([EquipmentModel] = '797F')
               AND ParameterFloatValue IS NOT NULL
-        AND ReadTime > (DATEADD (hour, -168, GETDATE()))
+        AND ReadTime > (DATEADD (hour, -120, GETDATE()))
         AND (ParameterName =  'Engine Oil Pressure (Absolute)' OR
             ParameterName =  'Engine Oil Pressure' OR
             ParameterName =  'Engine Oil Pressure Front' OR
